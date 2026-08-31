@@ -18,3 +18,9 @@ spring:
       host: localhost
       port: 6379
       password: secret
+
+jwt:
+  secret: "cAFTeYk3pON8LmPDQK2tgsqvXgsQjdt/8G/DEV8/XeMoHH0oKMU+kcE/baTpS4zg
+ZTiss7QIGsj9QcTCeDUa7w=="
+  access-token-validity: 1800000     # 30분 (ms)
+  refresh-token-validity: 1209600000 # 14일 (ms)
