@@ -17,7 +17,8 @@ public enum ErrorCode {
     FORBIDDEN(HttpStatus.FORBIDDEN, "접근 권한이 없습니다."),
     DUPLICATE_RESOURCE(HttpStatus.CONFLICT, "이미 존재하는 리소스입니다."),
 
-    MOVIE_NOT_FOUND(HttpStatus.NOT_FOUND, "영화를 찾을 수 없습니다.");
+    MOVIE_NOT_FOUND(HttpStatus.NOT_FOUND, "영화를 찾을 수 없습니다."),
+    EXTERNAL_API_ERROR(HttpStatus.SERVICE_UNAVAILABLE, "외부 서비스 연동에 실패했습니다.");
 
     private final HttpStatus status;
     private final String message;
