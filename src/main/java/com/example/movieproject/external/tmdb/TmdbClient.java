@@ -24,7 +24,7 @@ public class TmdbClient {
     private static final String LANGUAGE = "ko-KR";
 
     public TmdbMovieDetailResponse getMovieDetails(Integer movieId) {
-        String url = UriComponentsBuilder.fromHttpUrl(baseUrl + "/movie/" + movieId)
+        String url = UriComponentsBuilder.fromUriString(baseUrl + "/movie/" + movieId)
                 .queryParam("api_key", apiKey)
                 .queryParam("language", LANGUAGE)
                 .toUriString();
@@ -33,7 +33,7 @@ public class TmdbClient {
     }
 
     public TmdbCreditsResponse getCredits(Integer movieId) {
-        String url = UriComponentsBuilder.fromHttpUrl(baseUrl + "/movie/" + movieId + "/credits")
+        String url = UriComponentsBuilder.fromUriString(baseUrl + "/movie/" + movieId + "/credits")
                 .queryParam("api_key", apiKey)
                 .queryParam("language", LANGUAGE)
                 .toUriString();
@@ -42,7 +42,7 @@ public class TmdbClient {
     }
 
     public TmdbSearchResponse searchMovie(String title) {
-        String url = UriComponentsBuilder.fromHttpUrl(baseUrl + "/search/movie")
+        String url = UriComponentsBuilder.fromUriString(baseUrl + "/search/movie")
                 .queryParam("api_key", apiKey)
                 .queryParam("query", title)
                 .queryParam("language", LANGUAGE)
