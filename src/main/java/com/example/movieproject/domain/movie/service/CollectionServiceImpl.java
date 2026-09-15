@@ -59,7 +59,7 @@ public class CollectionServiceImpl implements CollectionService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(ErrorCode.ENTITY_NOT_FOUND));
 
-        List<Collection> collections = collectionRepository.findByUser(user);
+        List<Collection> collections = collectionRepository.findByUserWithMovies(user);
 
         return collections.stream()
                 .map(this::buildCollectionResponse)

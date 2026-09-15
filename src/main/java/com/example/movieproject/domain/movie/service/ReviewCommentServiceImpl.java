@@ -51,7 +51,7 @@ public class ReviewCommentServiceImpl implements ReviewCommentService {
         Review review = reviewRepository.findById(reviewId)
                 .orElseThrow(() -> new CustomException(ErrorCode.ENTITY_NOT_FOUND));
 
-        List<ReviewComment> comments = reviewCommentRepository.findByReview(review);
+        List<ReviewComment> comments = reviewCommentRepository.findByReviewWithUser(review);
 
         return comments.stream()
                 .map(this::buildCommentResponse)

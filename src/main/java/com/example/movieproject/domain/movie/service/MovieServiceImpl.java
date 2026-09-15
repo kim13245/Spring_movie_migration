@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -52,8 +53,8 @@ public class MovieServiceImpl implements MovieService {
             return createMovieFromTmdb(tmdbMovie, credits);
         });
 
-        // 리뷰 조회
-        List<Review> reviews = reviewRepository.findByMovieId(movieId);
+        // 리뷰 조회 (작성자, 감정 fetch join)
+        List<Review> reviews = reviewRepository.findByMovieIdWithUserAndEmotion(movieId);
 
         // 현재 사용자 조회 (로그인한 경우)
         User currentUser = null;
@@ -255,12 +256,17 @@ public class MovieServiceImpl implements MovieService {
     }
 
     private List<ReviewResponse> buildReviewResponses(List<Review> reviews, User currentUser) {
+        List<Long> reviewIds = reviews.stream().map(Review::getId).toList();
+        Map<Long, List<ReviewComment>> commentsByReview = reviewIds.isEmpty()
+                ? Map.of()
+                : reviewCommentRepository.findByReviewIdInWithUser(reviewIds).stream()
+                        .collect(Collectors.groupingBy(comment -> comment.getReview().getId()));
+
         return reviews.stream()
                 .map(review -> {
                     boolean isLiked = currentUser != null && review.isLikedBy(currentUser);
 
-                    // ReviewComment 조회
-                    List<ReviewComment> comments = reviewCommentRepository.findByReview(review);
+                    List<ReviewComment> comments = commentsByReview.getOrDefault(review.getId(), List.of());
                     List<ReviewCommentResponse> commentResponses = comments.stream()
                             .map(comment -> ReviewCommentResponse.builder()
                                     .id(comment.getId())

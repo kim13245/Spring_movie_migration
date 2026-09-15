@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -76,11 +77,18 @@ public class ReviewServiceImpl implements ReviewService {
     @Override
     @Transactional(readOnly = true)
     public List<ReviewResponse> getAllReviews(String email) {
-        List<Review> reviews = reviewRepository.findAll();
+        List<Review> reviews = reviewRepository.findAllWithUserAndEmotion();
         User currentUser = email != null ? userRepository.findByEmail(email).orElse(null) : null;
 
+        List<Long> reviewIds = reviews.stream().map(Review::getId).toList();
+        Map<Long, List<ReviewComment>> commentsByReview = reviewIds.isEmpty()
+                ? Map.of()
+                : reviewCommentRepository.findByReviewIdInWithUser(reviewIds).stream()
+                        .collect(Collectors.groupingBy(comment -> comment.getReview().getId()));
+
         return reviews.stream()
-                .map(review -> buildReviewResponse(review, currentUser))
+                .map(review -> buildReviewResponse(review, currentUser,
+                        commentsByReview.getOrDefault(review.getId(), List.of())))
                 .collect(Collectors.toList());
     }
 
@@ -134,6 +142,10 @@ public class ReviewServiceImpl implements ReviewService {
 
     private ReviewResponse buildReviewResponse(Review review, User currentUser) {
         List<ReviewComment> comments = reviewCommentRepository.findByReview(review);
+        return buildReviewResponse(review, currentUser, comments);
+    }
+
+    private ReviewResponse buildReviewResponse(Review review, User currentUser, List<ReviewComment> comments) {
         List<ReviewCommentResponse> commentResponses = comments.stream()
                 .map(comment -> ReviewCommentResponse.builder()
                         .id(comment.getId())
