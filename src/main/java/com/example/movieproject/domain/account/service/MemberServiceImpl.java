@@ -41,7 +41,7 @@ public class MemberServiceImpl implements MemberService {
     @Override
     @Transactional(readOnly = true)
     public ProfileResponse getMyProfile(String email) {
-        User user = userRepository.findByEmail(email)
+        User user = userRepository.findByEmailWithFollows(email)
                 .orElseThrow(() -> new CustomException(ErrorCode.ENTITY_NOT_FOUND));
 
         return buildProfileResponse(user);
@@ -50,7 +50,7 @@ public class MemberServiceImpl implements MemberService {
     @Override
     @Transactional(readOnly = true)
     public ProfileResponse getUserProfile(Long userId) {
-        User user = userRepository.findById(userId)
+        User user = userRepository.findByIdWithFollows(userId)
                 .orElseThrow(() -> new CustomException(ErrorCode.ENTITY_NOT_FOUND));
 
         return buildProfileResponse(user);
@@ -124,7 +124,7 @@ public class MemberServiceImpl implements MemberService {
                 .userIntro(user.getUserIntro())
                 .followersCount(user.getFollowers().size())
                 .followingsCount(user.getFollowings().size())
-                .keptMoviesCount(user.getKeptMovies().size())
+                .keptMoviesCount((int) userRepository.countKeptMoviesByUserId(user.getId()))
                 .reviewCount((int) reviewCount)
                 .reviewCommentCount((int) reviewCommentCount)
                 .ratingAverage(ratingAverage != null ? ratingAverage : 0.0)

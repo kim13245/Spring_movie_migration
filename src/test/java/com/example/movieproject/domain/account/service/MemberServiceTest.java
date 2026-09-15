@@ -80,7 +80,7 @@ class MemberServiceTest {
                 .nickname("테스트유저")
                 .build();
 
-        given(userRepository.findByEmail(email)).willReturn(Optional.of(user));
+        given(userRepository.findByEmailWithFollows(email)).willReturn(Optional.of(user));
         given(reviewRepository.countByUser(user)).willReturn(5L);
         given(reviewCommentRepository.countByUser(user)).willReturn(10L);
         given(reviewRepository.findAverageRatingByUser(user)).willReturn(4.5);
@@ -108,7 +108,7 @@ class MemberServiceTest {
                 .nickname("테스트유저")
                 .build();
 
-        given(userRepository.findById(userId)).willReturn(Optional.of(user));
+        given(userRepository.findByIdWithFollows(userId)).willReturn(Optional.of(user));
         given(reviewRepository.countByUser(user)).willReturn(3L);
         given(reviewCommentRepository.countByUser(user)).willReturn(7L);
         given(reviewRepository.findAverageRatingByUser(user)).willReturn(null);
