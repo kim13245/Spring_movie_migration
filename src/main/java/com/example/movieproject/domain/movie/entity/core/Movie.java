@@ -96,4 +96,16 @@ public class Movie {
         this.spokenLanguages = spokenLanguages;
         this.trailer = trailer;
     }
+
+    public void addGenre(Genre genre) {
+        this.genres.add(genre);
+    }
+
+    public void addCast(Cast castMember) {
+        this.cast.add(castMember);
+    }
+
+    public void addCrew(Crew crewMember) {
+        this.crew.add(crewMember);
+    }
 }
