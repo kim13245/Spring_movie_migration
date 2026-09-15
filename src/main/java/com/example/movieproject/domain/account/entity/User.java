@@ -36,6 +36,10 @@ public class User {
     @Column(nullable = false)
     private Role role = Role.USER;
 
+    // 탈퇴 여부 - 소프트 딜리트
+    @Column(nullable = false)
+    private boolean active = true;
+
     @ManyToMany
     @JoinTable(
             name = "user_kept_movie",
@@ -69,6 +73,44 @@ public class User {
         if (email != null) this.email = email;
         if (nickname != null) this.nickname = nickname;
         if (userIntro != null) this.userIntro = userIntro;
+    }
+
+    // 탈퇴 처리 - 실제 데이터는 남기고 계정만 비활성화, 닉네임은 익명화
+    public void deactivate() {
+        this.active = false;
+        this.nickname = "탈퇴한 회원";
+    }
+
+    // 팔로우 추가
+    public void follow(User targetUser) {
+        this.followings.add(targetUser);
+        targetUser.getFollowers().add(this);
+    }
+
+    // 언팔로우
+    public void unfollow(User targetUser) {
+        this.followings.remove(targetUser);
+        targetUser.getFollowers().remove(this);
+    }
+
+    // 팔로우 여부 확인
+    public boolean isFollowing(User targetUser) {
+        return this.followings.contains(targetUser);
+    }
+
+    // 영화 찜하기
+    public void keepMovie(Movie movie) {
+        this.keptMovies.add(movie);
+    }
+
+    // 영화 찜 취소
+    public void unkepMovie(Movie movie) {
+        this.keptMovies.remove(movie);
+    }
+
+    // 영화 찜 여부 확인
+    public boolean isKeptMovie(Movie movie) {
+        return this.keptMovies.contains(movie);
     }
 
     public enum Role {
