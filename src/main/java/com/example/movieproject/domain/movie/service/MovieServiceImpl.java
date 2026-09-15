@@ -262,8 +262,8 @@ public class MovieServiceImpl implements MovieService {
                             .id(review.getId())
                             .content(review.getContent())
                             .rating(review.getRating())
-                            .createdAt(review.getCreatedAt())
-                            .updatedAt(review.getUpdatedAt())
+                            .createdAt(review.getCreateReview())
+                            .updatedAt(review.getUpdateReview())
                             .userId(review.getUser().getId())
                             .username(review.getUser().getUsername())
                             .nickname(review.getUser().getNickname())
@@ -276,6 +276,6 @@ public class MovieServiceImpl implements MovieService {
                             .comments(List.of()) // TODO: 댓글 조회 구현 필요
                             .build();
                 })
-                .collect(Collectors.toList());
+                .toList();
     }
 }
