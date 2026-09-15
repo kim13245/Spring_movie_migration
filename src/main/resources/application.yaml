@@ -24,3 +24,7 @@ jwt:
 ZTiss7QIGsj9QcTCeDUa7w=="
   access-token-validity: 1800000     # 30분 (ms)
   refresh-token-validity: 1209600000 # 14일 (ms)
+
+tmdb:
+  api-key: ${TMDB_API_KEY:your-api-key-here}
+  base-url: https://api.themoviedb.org/3
