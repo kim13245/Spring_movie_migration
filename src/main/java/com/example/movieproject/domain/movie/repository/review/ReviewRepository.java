@@ -13,4 +13,8 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
     List<Review> findByMovieId(Integer movieId);
     Optional<Review> findByUserAndMovie(User user, Movie movie);
     boolean existsByUserAndMovie(User user, Movie movie);
+    long countByUser(User user);
+
+    @org.springframework.data.jpa.repository.Query("SELECT AVG(r.rating) FROM Review r WHERE r.user = :user")
+    Double findAverageRatingByUser(@org.springframework.data.repository.query.Param("user") User user);
 }

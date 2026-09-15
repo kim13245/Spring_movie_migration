@@ -4,13 +4,16 @@ import com.example.movieproject.common.exception.CustomException;
 import com.example.movieproject.common.exception.ErrorCode;
 import com.example.movieproject.domain.account.entity.User;
 import com.example.movieproject.domain.account.repository.UserRepository;
+import com.example.movieproject.domain.movie.dto.ReviewCommentResponse;
 import com.example.movieproject.domain.movie.dto.ReviewRequest;
 import com.example.movieproject.domain.movie.dto.ReviewResponse;
 import com.example.movieproject.domain.movie.entity.core.Emotion;
 import com.example.movieproject.domain.movie.entity.core.Movie;
 import com.example.movieproject.domain.movie.entity.review.Review;
+import com.example.movieproject.domain.movie.entity.review.ReviewComment;
 import com.example.movieproject.domain.movie.repository.core.EmotionRepository;
 import com.example.movieproject.domain.movie.repository.core.MovieRepository;
+import com.example.movieproject.domain.movie.repository.review.ReviewCommentRepository;
 import com.example.movieproject.domain.movie.repository.review.ReviewRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -24,6 +27,7 @@ import java.util.stream.Collectors;
 public class ReviewServiceImpl implements ReviewService {
 
     private final ReviewRepository reviewRepository;
+    private final ReviewCommentRepository reviewCommentRepository;
     private final UserRepository userRepository;
     private final MovieRepository movieRepository;
     private final EmotionRepository emotionRepository;
@@ -129,6 +133,20 @@ public class ReviewServiceImpl implements ReviewService {
     }
 
     private ReviewResponse buildReviewResponse(Review review, User currentUser) {
+        List<ReviewComment> comments = reviewCommentRepository.findByReview(review);
+        List<ReviewCommentResponse> commentResponses = comments.stream()
+                .map(comment -> ReviewCommentResponse.builder()
+                        .id(comment.getId())
+                        .content(comment.getContent())
+                        .createdAt(comment.getCreateComment())
+                        .updatedAt(comment.getUpdateComment())
+                        .userId(comment.getUser().getId())
+                        .username(comment.getUser().getUsername())
+                        .nickname(comment.getUser().getNickname())
+                        .reviewId(review.getId())
+                        .build())
+                .collect(Collectors.toList());
+
         return ReviewResponse.builder()
                 .id(review.getId())
                 .content(review.getContent())
@@ -144,7 +162,7 @@ public class ReviewServiceImpl implements ReviewService {
                 .emotionName(review.getEmotion().getName())
                 .likesCount(review.getLikesCount())
                 .isLiked(currentUser != null && review.isLikedBy(currentUser))
-                .comments(List.of()) // TODO: ReviewComment 구현 후 추가
+                .comments(commentResponses)
                 .build();
     }
 }

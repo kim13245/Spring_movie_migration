@@ -7,9 +7,11 @@ import com.example.movieproject.domain.account.repository.UserRepository;
 import com.example.movieproject.domain.movie.dto.*;
 import com.example.movieproject.domain.movie.entity.core.*;
 import com.example.movieproject.domain.movie.entity.review.Review;
+import com.example.movieproject.domain.movie.entity.review.ReviewComment;
 import com.example.movieproject.domain.movie.repository.core.GenreRepository;
 import com.example.movieproject.domain.movie.repository.core.MovieRepository;
 import com.example.movieproject.domain.movie.repository.core.PersonRepository;
+import com.example.movieproject.domain.movie.repository.review.ReviewCommentRepository;
 import com.example.movieproject.domain.movie.repository.review.ReviewRepository;
 import com.example.movieproject.external.tmdb.TmdbClient;
 import com.example.movieproject.external.tmdb.dto.*;
@@ -28,6 +30,7 @@ public class MovieServiceImpl implements MovieService {
     private final GenreRepository genreRepository;
     private final PersonRepository personRepository;
     private final ReviewRepository reviewRepository;
+    private final ReviewCommentRepository reviewCommentRepository;
     private final UserRepository userRepository;
     private final TmdbClient tmdbClient;
 
@@ -256,7 +259,20 @@ public class MovieServiceImpl implements MovieService {
                 .map(review -> {
                     boolean isLiked = currentUser != null && review.isLikedBy(currentUser);
 
-                    // TODO: ReviewComment 조회 추가 필요
+                    // ReviewComment 조회
+                    List<ReviewComment> comments = reviewCommentRepository.findByReview(review);
+                    List<ReviewCommentResponse> commentResponses = comments.stream()
+                            .map(comment -> ReviewCommentResponse.builder()
+                                    .id(comment.getId())
+                                    .content(comment.getContent())
+                                    .createdAt(comment.getCreateComment())
+                                    .updatedAt(comment.getUpdateComment())
+                                    .userId(comment.getUser().getId())
+                                    .username(comment.getUser().getUsername())
+                                    .nickname(comment.getUser().getNickname())
+                                    .reviewId(review.getId())
+                                    .build())
+                            .collect(Collectors.toList());
 
                     return ReviewResponse.builder()
                             .id(review.getId())
@@ -273,7 +289,7 @@ public class MovieServiceImpl implements MovieService {
                             .emotionName(review.getEmotion() != null ? review.getEmotion().getName() : null)
                             .likesCount(review.getLikes().size())
                             .isLiked(isLiked)
-                            .comments(List.of()) // TODO: 댓글 조회 구현 필요
+                            .comments(commentResponses)
                             .build();
                 })
                 .toList();

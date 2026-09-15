@@ -98,10 +98,12 @@ public class ReviewCommentServiceImpl implements ReviewCommentService {
         return ReviewCommentResponse.builder()
                 .id(comment.getId())
                 .content(comment.getContent())
-                .nickname(comment.getUser().getNickname())
+                .createdAt(comment.getCreateComment())
+                .updatedAt(comment.getUpdateComment())
                 .userId(comment.getUser().getId())
+                .username(comment.getUser().getUsername())
+                .nickname(comment.getUser().getNickname())
                 .reviewId(comment.getReview().getId())
-                .createdAt(comment.getCreatedAt())
                 .build();
     }
 }

@@ -27,7 +27,9 @@ public class ReviewComment {
     private String content;
 
     @Column(nullable = false, updatable = false)
-    private LocalDateTime createdAt;
+    private LocalDateTime createComment;
+
+    private LocalDateTime updateComment;
 
     @Builder
     public ReviewComment(Review review, User user, String content) {
@@ -38,7 +40,12 @@ public class ReviewComment {
 
     @PrePersist
     protected void onCreate() {
-        this.createdAt = LocalDateTime.now();
+        this.createComment = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        this.updateComment = LocalDateTime.now();
     }
 
     public void updateContent(String content) {

@@ -8,8 +8,10 @@ import java.time.LocalDateTime;
 public record ReviewCommentResponse(
         Long id,
         String content,
-        String nickname,
+        LocalDateTime createdAt,
+        LocalDateTime updatedAt,
         Long userId,
-        Long reviewId,
-        LocalDateTime createdAt
+        String username,
+        String nickname,
+        Long reviewId
 ) {}

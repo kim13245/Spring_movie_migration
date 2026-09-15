@@ -9,6 +9,8 @@ import com.example.movieproject.domain.account.entity.User;
 import com.example.movieproject.domain.account.repository.UserRepository;
 import com.example.movieproject.domain.movie.entity.core.Movie;
 import com.example.movieproject.domain.movie.repository.core.MovieRepository;
+import com.example.movieproject.domain.movie.repository.review.ReviewCommentRepository;
+import com.example.movieproject.domain.movie.repository.review.ReviewRepository;
 import com.example.movieproject.security.jwt.RefreshTokenService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -22,6 +24,8 @@ public class MemberServiceImpl implements MemberService {
 
     private final UserRepository userRepository;
     private final MovieRepository movieRepository;
+    private final ReviewRepository reviewRepository;
+    private final ReviewCommentRepository reviewCommentRepository;
     private final RefreshTokenService refreshTokenService;
 
     @Override
@@ -107,6 +111,10 @@ public class MemberServiceImpl implements MemberService {
     }
 
     private ProfileResponse buildProfileResponse(User user) {
+        long reviewCount = reviewRepository.countByUser(user);
+        long reviewCommentCount = reviewCommentRepository.countByUser(user);
+        Double ratingAverage = reviewRepository.findAverageRatingByUser(user);
+
         return ProfileResponse.builder()
                 .id(user.getId())
                 .username(user.getUsername())
@@ -117,9 +125,9 @@ public class MemberServiceImpl implements MemberService {
                 .followersCount(user.getFollowers().size())
                 .followingsCount(user.getFollowings().size())
                 .keptMoviesCount(user.getKeptMovies().size())
-                .reviewCount(0) // TODO: Review 도메인 구현 후 추가
-                .reviewCommentCount(0) // TODO: ReviewComment 도메인 구현 후 추가
-                .ratingAverage(0.0) // TODO: Review 도메인 구현 후 추가
+                .reviewCount((int) reviewCount)
+                .reviewCommentCount((int) reviewCommentCount)
+                .ratingAverage(ratingAverage != null ? ratingAverage : 0.0)
                 .followersNames(user.getFollowers().stream()
                         .map(User::getUsername)
                         .collect(Collectors.toList()))
