@@ -133,16 +133,18 @@ public class ReviewServiceImpl implements ReviewService {
                 .id(review.getId())
                 .content(review.getContent())
                 .rating(review.getRating())
-                .createReview(review.getCreateReview())
-                .nickname(review.getUser().getNickname())
+                .createdAt(review.getCreateReview())
+                .updatedAt(review.getUpdateReview())
                 .userId(review.getUser().getId())
+                .username(review.getUser().getUsername())
+                .nickname(review.getUser().getNickname())
                 .movieId(review.getMovie().getId())
                 .movieTitle(review.getMovie().getTitle())
-                .posterPath(review.getMovie().getPosterPath())
                 .emotionId(review.getEmotion().getId())
+                .emotionName(review.getEmotion().getName())
                 .likesCount(review.getLikesCount())
                 .isLiked(currentUser != null && review.isLikedBy(currentUser))
-                .comments(null) // TODO: ReviewComment 구현 후 추가
+                .comments(List.of()) // TODO: ReviewComment 구현 후 추가
                 .build();
     }
 }
