@@ -70,4 +70,18 @@ public class Review {
     public int getLikesCount() {
         return likes.size();
     }
+
+    // 좋아요 토글
+    public void toggleLike(User user) {
+        if (likes.contains(user)) {
+            likes.remove(user);
+        } else {
+            likes.add(user);
+        }
+    }
+
+    // 좋아요 여부 확인
+    public boolean isLikedBy(User user) {
+        return likes.contains(user);
+    }
 }
