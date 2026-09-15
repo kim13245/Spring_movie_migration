@@ -28,6 +28,8 @@ public class Review {
     @Column(nullable = false, updatable = false)
     private LocalDateTime createReview;
 
+    private LocalDateTime updateReview;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
@@ -60,6 +62,11 @@ public class Review {
     @PrePersist
     protected void onCreate() {
         this.createReview = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        this.updateReview = LocalDateTime.now();
     }
 
     public void updateContent(String content, Double rating) {
