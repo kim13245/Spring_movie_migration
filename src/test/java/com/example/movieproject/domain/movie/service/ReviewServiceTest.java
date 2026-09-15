@@ -11,7 +11,6 @@ import com.example.movieproject.domain.movie.entity.core.Movie;
 import com.example.movieproject.domain.movie.entity.review.Review;
 import com.example.movieproject.domain.movie.repository.core.EmotionRepository;
 import com.example.movieproject.domain.movie.repository.core.MovieRepository;
-import com.example.movieproject.domain.movie.repository.review.ReviewCommentRepository;
 import com.example.movieproject.domain.movie.repository.review.ReviewRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -20,7 +19,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.*;
@@ -38,9 +36,6 @@ class ReviewServiceTest {
     private ReviewRepository reviewRepository;
 
     @Mock
-    private ReviewCommentRepository reviewCommentRepository;
-
-    @Mock
     private UserRepository userRepository;
 
     @Mock
@@ -48,6 +43,9 @@ class ReviewServiceTest {
 
     @Mock
     private EmotionRepository emotionRepository;
+
+    @Mock
+    private ReviewResponseAssembler reviewResponseAssembler;
 
     @Test
     @DisplayName("리뷰 작성 성공")
@@ -85,7 +83,8 @@ class ReviewServiceTest {
         given(emotionRepository.findById(request.emotionId())).willReturn(Optional.of(emotion));
         given(reviewRepository.existsByUserAndMovie(user, movie)).willReturn(false);
         given(reviewRepository.save(any(Review.class))).willReturn(savedReview);
-        given(reviewCommentRepository.findByReview(any(Review.class))).willReturn(List.of());
+        given(reviewResponseAssembler.toResponse(savedReview, user)).willReturn(
+                ReviewResponse.builder().content(request.content()).rating(request.rating()).build());
 
         // when
         ReviewResponse response = reviewService.createReview(email, request);
@@ -163,7 +162,8 @@ class ReviewServiceTest {
 
         given(reviewRepository.findById(reviewId)).willReturn(Optional.of(review));
         given(userRepository.findByEmail(email)).willReturn(Optional.of(user));
-        given(reviewCommentRepository.findByReview(review)).willReturn(List.of());
+        given(reviewResponseAssembler.toResponse(review, user)).willReturn(
+                ReviewResponse.builder().content("좋은 영화입니다").rating(4.5).build());
 
         // when
         ReviewResponse response = reviewService.getReview(reviewId, email);
@@ -207,7 +207,8 @@ class ReviewServiceTest {
 
         given(userRepository.findByEmail(email)).willReturn(Optional.of(user));
         given(reviewRepository.findById(reviewId)).willReturn(Optional.of(review));
-        given(reviewCommentRepository.findByReview(review)).willReturn(List.of());
+        given(reviewResponseAssembler.toResponse(review, user)).willReturn(
+                ReviewResponse.builder().content("수정된 내용").rating(5.0).build());
 
         // when
         ReviewResponse response = reviewService.updateReview(email, reviewId, request);

@@ -7,7 +7,6 @@ import com.example.movieproject.domain.movie.entity.core.Movie;
 import com.example.movieproject.domain.movie.repository.core.GenreRepository;
 import com.example.movieproject.domain.movie.repository.core.MovieRepository;
 import com.example.movieproject.domain.movie.repository.core.PersonRepository;
-import com.example.movieproject.domain.movie.repository.review.ReviewCommentRepository;
 import com.example.movieproject.domain.movie.repository.review.ReviewRepository;
 import com.example.movieproject.external.tmdb.TmdbClient;
 import org.junit.jupiter.api.DisplayName;
@@ -41,9 +40,6 @@ class MovieServiceTest {
 
     @Mock
     private ReviewRepository reviewRepository;
-
-    @Mock
-    private ReviewCommentRepository reviewCommentRepository;
 
     @Mock
     private UserRepository userRepository;

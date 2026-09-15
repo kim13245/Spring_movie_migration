@@ -7,11 +7,9 @@ import com.example.movieproject.domain.account.repository.UserRepository;
 import com.example.movieproject.domain.movie.dto.*;
 import com.example.movieproject.domain.movie.entity.core.*;
 import com.example.movieproject.domain.movie.entity.review.Review;
-import com.example.movieproject.domain.movie.entity.review.ReviewComment;
 import com.example.movieproject.domain.movie.repository.core.GenreRepository;
 import com.example.movieproject.domain.movie.repository.core.MovieRepository;
 import com.example.movieproject.domain.movie.repository.core.PersonRepository;
-import com.example.movieproject.domain.movie.repository.review.ReviewCommentRepository;
 import com.example.movieproject.domain.movie.repository.review.ReviewRepository;
 import com.example.movieproject.external.tmdb.TmdbClient;
 import com.example.movieproject.external.tmdb.dto.*;
@@ -19,11 +17,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -34,9 +30,9 @@ public class MovieServiceImpl implements MovieService {
     private final GenreRepository genreRepository;
     private final PersonRepository personRepository;
     private final ReviewRepository reviewRepository;
-    private final ReviewCommentRepository reviewCommentRepository;
     private final UserRepository userRepository;
     private final TmdbClient tmdbClient;
+    private final ReviewResponseAssembler reviewResponseAssembler;
 
     @Override
     @Transactional(readOnly = true)
@@ -70,7 +66,7 @@ public class MovieServiceImpl implements MovieService {
         CreditsResponse credits = buildCreditsResponse(creditsData);
 
         MovieDetailResponse movieDetail = buildMovieDetailResponse(movie);
-        List<ReviewResponse> reviewResponses = buildReviewResponses(reviews, currentUser);
+        List<ReviewResponse> reviewResponses = reviewResponseAssembler.toResponses(reviews, currentUser);
 
         return MovieDetailWithReviewsResponse.builder()
                 .movie(movieDetail)
@@ -282,62 +278,5 @@ public class MovieServiceImpl implements MovieService {
                 .cast(cast)
                 .crew(crew)
                 .build();
-    }
-
-    private List<ReviewResponse> buildReviewResponses(List<Review> reviews, User currentUser) {
-        List<Long> reviewIds = reviews.stream().map(Review::getId).toList();
-
-        Map<Long, List<ReviewComment>> commentsByReview = reviewIds.isEmpty()
-                ? Map.of()
-                : reviewCommentRepository.findByReviewIdInWithUser(reviewIds).stream()
-                        .collect(Collectors.groupingBy(comment -> comment.getReview().getId()));
-
-        Map<Long, Long> likesCountByReview = reviewIds.isEmpty()
-                ? Map.of()
-                : reviewRepository.countLikesByReviewIds(reviewIds).stream()
-                        .collect(Collectors.toMap(row -> (Long) row[0], row -> (Long) row[1]));
-
-        Set<Long> likedReviewIds = (currentUser != null && !reviewIds.isEmpty())
-                ? new HashSet<>(reviewRepository.findReviewIdsLikedByUser(reviewIds, currentUser.getId()))
-                : Set.of();
-
-        return reviews.stream()
-                .map(review -> {
-                    boolean isLiked = likedReviewIds.contains(review.getId());
-                    long likesCount = likesCountByReview.getOrDefault(review.getId(), 0L);
-
-                    List<ReviewComment> comments = commentsByReview.getOrDefault(review.getId(), List.of());
-                    List<ReviewCommentResponse> commentResponses = comments.stream()
-                            .map(comment -> ReviewCommentResponse.builder()
-                                    .id(comment.getId())
-                                    .content(comment.getContent())
-                                    .createdAt(comment.getCreateComment())
-                                    .updatedAt(comment.getUpdateComment())
-                                    .userId(comment.getUser().getId())
-                                    .username(comment.getUser().getUsername())
-                                    .nickname(comment.getUser().getNickname())
-                                    .reviewId(review.getId())
-                                    .build())
-                            .collect(Collectors.toList());
-
-                    return ReviewResponse.builder()
-                            .id(review.getId())
-                            .content(review.getContent())
-                            .rating(review.getRating())
-                            .createdAt(review.getCreateReview())
-                            .updatedAt(review.getUpdateReview())
-                            .userId(review.getUser().getId())
-                            .username(review.getUser().getUsername())
-                            .nickname(review.getUser().getNickname())
-                            .movieId(review.getMovie().getId())
-                            .movieTitle(review.getMovie().getTitle())
-                            .emotionId(review.getEmotion() != null ? review.getEmotion().getId() : null)
-                            .emotionName(review.getEmotion() != null ? review.getEmotion().getName() : null)
-                            .likesCount((int) likesCount)
-                            .isLiked(isLiked)
-                            .comments(commentResponses)
-                            .build();
-                })
-                .toList();
     }
 }
