@@ -19,8 +19,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -130,22 +133,14 @@ public class MovieServiceImpl implements MovieService {
 
         Movie savedMovie = movieRepository.save(movie);
 
+        Map<Integer, Person> personMap = resolvePersons(credits);
+
         // Cast 추가
         if (credits.getCast() != null) {
             for (TmdbCastDto castDto : credits.getCast()) {
-                Person person = personRepository.findById(castDto.getId())
-                        .orElseGet(() -> {
-                            Person newPerson = Person.builder()
-                                    .id(castDto.getId())
-                                    .name(castDto.getName())
-                                    .profilePath(castDto.getProfilePath())
-                                    .build();
-                            return personRepository.save(newPerson);
-                        });
-
                 Cast cast = Cast.builder()
                         .movie(savedMovie)
-                        .person(person)
+                        .person(personMap.get(castDto.getId()))
                         .name(castDto.getName())
                         .character(castDto.getCharacter())
                         .build();
@@ -157,19 +152,9 @@ public class MovieServiceImpl implements MovieService {
         // Crew 추가
         if (credits.getCrew() != null) {
             for (TmdbCrewDto crewDto : credits.getCrew()) {
-                Person person = personRepository.findById(crewDto.getId())
-                        .orElseGet(() -> {
-                            Person newPerson = Person.builder()
-                                    .id(crewDto.getId())
-                                    .name(crewDto.getName())
-                                    .profilePath(crewDto.getProfilePath())
-                                    .build();
-                            return personRepository.save(newPerson);
-                        });
-
                 Crew crew = Crew.builder()
                         .movie(savedMovie)
-                        .person(person)
+                        .person(personMap.get(crewDto.getId()))
                         .department(crewDto.getDepartment())
                         .build();
 
@@ -178,6 +163,50 @@ public class MovieServiceImpl implements MovieService {
         }
 
         return savedMovie;
+    }
+
+    // cast/crew 인물을 건별 조회/저장하지 않고 일괄 조회 + 신규 인물만 일괄 저장
+    private Map<Integer, Person> resolvePersons(TmdbCreditsResponse credits) {
+        Map<Integer, Person> personsToCreate = new LinkedHashMap<>();
+
+        if (credits.getCast() != null) {
+            for (TmdbCastDto castDto : credits.getCast()) {
+                personsToCreate.putIfAbsent(castDto.getId(), Person.builder()
+                        .id(castDto.getId())
+                        .name(castDto.getName())
+                        .profilePath(castDto.getProfilePath())
+                        .build());
+            }
+        }
+        if (credits.getCrew() != null) {
+            for (TmdbCrewDto crewDto : credits.getCrew()) {
+                personsToCreate.putIfAbsent(crewDto.getId(), Person.builder()
+                        .id(crewDto.getId())
+                        .name(crewDto.getName())
+                        .profilePath(crewDto.getProfilePath())
+                        .build());
+            }
+        }
+
+        if (personsToCreate.isEmpty()) {
+            return Map.of();
+        }
+
+        Map<Integer, Person> personMap = personRepository.findAllById(personsToCreate.keySet()).stream()
+                .collect(Collectors.toMap(Person::getId, person -> person));
+
+        List<Person> newPersons = personsToCreate.entrySet().stream()
+                .filter(entry -> !personMap.containsKey(entry.getKey()))
+                .map(Map.Entry::getValue)
+                .toList();
+
+        if (!newPersons.isEmpty()) {
+            for (Person saved : personRepository.saveAll(newPersons)) {
+                personMap.put(saved.getId(), saved);
+            }
+        }
+
+        return personMap;
     }
 
     private MovieListResponse buildMovieListResponse(Movie movie) {
@@ -257,14 +286,25 @@ public class MovieServiceImpl implements MovieService {
 
     private List<ReviewResponse> buildReviewResponses(List<Review> reviews, User currentUser) {
         List<Long> reviewIds = reviews.stream().map(Review::getId).toList();
+
         Map<Long, List<ReviewComment>> commentsByReview = reviewIds.isEmpty()
                 ? Map.of()
                 : reviewCommentRepository.findByReviewIdInWithUser(reviewIds).stream()
                         .collect(Collectors.groupingBy(comment -> comment.getReview().getId()));
 
+        Map<Long, Long> likesCountByReview = reviewIds.isEmpty()
+                ? Map.of()
+                : reviewRepository.countLikesByReviewIds(reviewIds).stream()
+                        .collect(Collectors.toMap(row -> (Long) row[0], row -> (Long) row[1]));
+
+        Set<Long> likedReviewIds = (currentUser != null && !reviewIds.isEmpty())
+                ? new HashSet<>(reviewRepository.findReviewIdsLikedByUser(reviewIds, currentUser.getId()))
+                : Set.of();
+
         return reviews.stream()
                 .map(review -> {
-                    boolean isLiked = currentUser != null && review.isLikedBy(currentUser);
+                    boolean isLiked = likedReviewIds.contains(review.getId());
+                    long likesCount = likesCountByReview.getOrDefault(review.getId(), 0L);
 
                     List<ReviewComment> comments = commentsByReview.getOrDefault(review.getId(), List.of());
                     List<ReviewCommentResponse> commentResponses = comments.stream()
@@ -293,7 +333,7 @@ public class MovieServiceImpl implements MovieService {
                             .movieTitle(review.getMovie().getTitle())
                             .emotionId(review.getEmotion() != null ? review.getEmotion().getId() : null)
                             .emotionName(review.getEmotion() != null ? review.getEmotion().getName() : null)
-                            .likesCount(review.getLikes().size())
+                            .likesCount((int) likesCount)
                             .isLiked(isLiked)
                             .comments(commentResponses)
                             .build();

@@ -19,8 +19,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -77,18 +79,30 @@ public class ReviewServiceImpl implements ReviewService {
     @Override
     @Transactional(readOnly = true)
     public List<ReviewResponse> getAllReviews(String email) {
-        List<Review> reviews = reviewRepository.findAllWithUserAndEmotion();
+        List<Review> reviews = reviewRepository.findAllWithDetails();
         User currentUser = email != null ? userRepository.findByEmail(email).orElse(null) : null;
 
         List<Long> reviewIds = reviews.stream().map(Review::getId).toList();
+
         Map<Long, List<ReviewComment>> commentsByReview = reviewIds.isEmpty()
                 ? Map.of()
                 : reviewCommentRepository.findByReviewIdInWithUser(reviewIds).stream()
                         .collect(Collectors.groupingBy(comment -> comment.getReview().getId()));
 
+        Map<Long, Long> likesCountByReview = reviewIds.isEmpty()
+                ? Map.of()
+                : reviewRepository.countLikesByReviewIds(reviewIds).stream()
+                        .collect(Collectors.toMap(row -> (Long) row[0], row -> (Long) row[1]));
+
+        Set<Long> likedReviewIds = (currentUser != null && !reviewIds.isEmpty())
+                ? new HashSet<>(reviewRepository.findReviewIdsLikedByUser(reviewIds, currentUser.getId()))
+                : Set.of();
+
         return reviews.stream()
-                .map(review -> buildReviewResponse(review, currentUser,
-                        commentsByReview.getOrDefault(review.getId(), List.of())))
+                .map(review -> buildReviewResponse(review,
+                        commentsByReview.getOrDefault(review.getId(), List.of()),
+                        likesCountByReview.getOrDefault(review.getId(), 0L),
+                        likedReviewIds.contains(review.getId())))
                 .collect(Collectors.toList());
     }
 
@@ -142,10 +156,13 @@ public class ReviewServiceImpl implements ReviewService {
 
     private ReviewResponse buildReviewResponse(Review review, User currentUser) {
         List<ReviewComment> comments = reviewCommentRepository.findByReview(review);
-        return buildReviewResponse(review, currentUser, comments);
+        long likesCount = review.getLikesCount();
+        boolean isLiked = currentUser != null && review.isLikedBy(currentUser);
+        return buildReviewResponse(review, comments, likesCount, isLiked);
     }
 
-    private ReviewResponse buildReviewResponse(Review review, User currentUser, List<ReviewComment> comments) {
+    private ReviewResponse buildReviewResponse(Review review, List<ReviewComment> comments,
+                                                long likesCount, boolean isLiked) {
         List<ReviewCommentResponse> commentResponses = comments.stream()
                 .map(comment -> ReviewCommentResponse.builder()
                         .id(comment.getId())
@@ -172,8 +189,8 @@ public class ReviewServiceImpl implements ReviewService {
                 .movieTitle(review.getMovie().getTitle())
                 .emotionId(review.getEmotion().getId())
                 .emotionName(review.getEmotion().getName())
-                .likesCount(review.getLikesCount())
-                .isLiked(currentUser != null && review.isLikedBy(currentUser))
+                .likesCount((int) likesCount)
+                .isLiked(isLiked)
                 .comments(commentResponses)
                 .build();
     }

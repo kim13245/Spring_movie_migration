@@ -23,6 +23,12 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
     @Query("SELECT r FROM Review r JOIN FETCH r.user JOIN FETCH r.emotion WHERE r.movie.id = :movieId")
     List<Review> findByMovieIdWithUserAndEmotion(@Param("movieId") Integer movieId);
 
-    @Query("SELECT r FROM Review r JOIN FETCH r.user JOIN FETCH r.emotion")
-    List<Review> findAllWithUserAndEmotion();
+    @Query("SELECT r FROM Review r JOIN FETCH r.user JOIN FETCH r.movie JOIN FETCH r.emotion")
+    List<Review> findAllWithDetails();
+
+    @Query("SELECT r.id, COUNT(l) FROM Review r LEFT JOIN r.likes l WHERE r.id IN :reviewIds GROUP BY r.id")
+    List<Object[]> countLikesByReviewIds(@Param("reviewIds") List<Long> reviewIds);
+
+    @Query("SELECT r.id FROM Review r JOIN r.likes l WHERE r.id IN :reviewIds AND l.id = :userId")
+    List<Long> findReviewIdsLikedByUser(@Param("reviewIds") List<Long> reviewIds, @Param("userId") Long userId);
 }
