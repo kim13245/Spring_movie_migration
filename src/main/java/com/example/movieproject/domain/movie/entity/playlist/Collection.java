@@ -44,4 +44,14 @@ public class Collection {
     public void updateTitle(String title) {
         this.title = title;
     }
+
+    // 영화 추가
+    public void addMovies(Set<Movie> moviesToAdd) {
+        this.movies.addAll(moviesToAdd);
+    }
+
+    // 영화 제거
+    public void removeMovies(Set<Movie> moviesToRemove) {
+        this.movies.removeAll(moviesToRemove);
+    }
 }
